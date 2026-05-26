@@ -8,13 +8,13 @@ namespace SistemaGestionVentas
     {
         private string connectionString;
 
-        // El constructor recibe la conexión de forma segura
+        // constructor que recibe la cadena de conexión a la base de datos
         public DatabaseManager(string connStr)
         {
             connectionString = connStr;
         }
 
-        // Método para listar las sucursales existentes
+        // metodo para listar las sucursales
         public List<Sucursal> ObtenerSucursales()
         {
             List<Sucursal> sucursales = new List<Sucursal>();
