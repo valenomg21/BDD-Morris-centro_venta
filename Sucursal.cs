@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace SistemaGestionVentas
 {
-    // Composición: Una sucursal "tiene" una lista de productos
+    // composición: una sucursal "tiene" productos
     public class Sucursal
     {
         public int Id { get; set; }

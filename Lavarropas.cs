@@ -1,10 +1,10 @@
 namespace SistemaGestionVentas
 {
-    // Herencia: Lavarropas "es un" Producto
+    // hereda de producto
     public class Lavarropas : Producto
     {
         public int Carga { get; set; }
-        public string Tipo { get; set; } // automatico / semi
+        public string Tipo { get; set; } // automatico, semi, etc
 
         public Lavarropas(string codigo, string nombre, decimal precio, int stock, int idSucursal, int carga, string tipo)
             : base(codigo, nombre, precio, stock, idSucursal)
@@ -13,7 +13,7 @@ namespace SistemaGestionVentas
             Tipo = tipo;
         }
 
-        // Polimorfismo: Los lavarropas mantienen su precio base (sin recargos)
+        // polimorfismo, modifica el método de la clase padre
         public override decimal CalcularPrecioFinal()
         {
             return Precio;

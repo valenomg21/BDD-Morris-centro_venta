@@ -5,18 +5,19 @@ namespace SistemaGestionVentas
 {
     class Program
     {
-        // Recuerda ajustar la contraseña 'tu_contraseña' por la de tu MySQL local
-        private static string connectionString = "Server=localhost;Database=gestion_ventas;Uid=root;Pwd=pokemon123;";
+        private static string connectionString = "";
         private static DatabaseManager db;
         private static int sucursalActivaId = 0;
         private static string sucursalActivaNombre = "";
 
         static void Main(string[] args)
         {
-            db = new DatabaseManager(connectionString);
             Console.Title = "UTN - Sistema de Control de Stock y Ventas";
 
-            // Flujo obligatorio inicial: Seleccionar Sucursal
+            // se piden los datos de la conexion antes de empezar
+            ConfigurarConexion();
+
+            // obliga a elegir una sucursal
             CambiarDeSucursal();
 
             bool ejecutar = true;
@@ -69,47 +70,145 @@ namespace SistemaGestionVentas
             }
         }
 
-        static void CambiarDeSucursal()
+        #region CONFIGURACIÓN DE CONEXIÓN Y LOGIN SEGURO
+
+        static void ConfigurarConexion()
         {
             Console.Clear();
-            Console.WriteLine("=== SELECCIONE UNA SUCURSAL DE OPERACIÓN ===");
-            try
-            {
-                List<Sucursal> lista = db.ObtenerSucursales();
-                foreach (var suc in lista)
-                {
-                    Console.WriteLine($"{suc.Id} - {suc.Nombre}");
-                }
+            Console.WriteLine("==================================================");
+            Console.WriteLine("        CONFIGURACIÓN DE CONEXIÓN A MYSQL         ");
+            Console.WriteLine("==================================================");
+            Console.Write("Ingrese su usuario de MySQL [Por defecto: root]: ");
+            string usuario = Console.ReadLine();
+            if (string.IsNullOrEmpty(usuario)) usuario = "root";
 
-                Console.Write("\nIngrese el ID numérico de la sucursal: ");
-                if (int.TryParse(Console.ReadLine(), out int idSel))
+            string password = LeerContraseña("Ingrese su contraseña de MySQL: ");
+            //cuando tenga que conectar la bbd del profe solo cambio el localhost por su ip
+            connectionString = $"Server=localhost;Database=gestion_ventas;Uid={usuario};Pwd={password};";
+            db = new DatabaseManager(connectionString);
+        }
+
+        // metodo para leer contraseñas sin mostrar el texto en consola, y con soporte de backspace
+        static string LeerContraseña(string mensaje)
+        {
+            Console.Write(mensaje);
+            string password = "";
+            while (true)
+            {
+                ConsoleKeyInfo key = Console.ReadKey(true);
+                if (key.Key == ConsoleKey.Enter)
                 {
+                    Console.WriteLine();
+                    break;
+                }
+                else if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (password.Length > 0)
+                    {
+                        password = password.Substring(0, password.Length - 1);
+                        Console.Write("\b \b");
+                    }
+                }
+                else if (key.KeyChar != '\u0000') 
+                {
+                    password += key.KeyChar;
+                    Console.Write("*");
+                }
+            }
+            return password;
+        }
+
+        #endregion
+
+        #region METODOS DE VALIDACION DE ENTRADAS
+
+        // validacion de txto
+        static string LeerTexto(string mensaje)
+        {
+            while (true)
+            {
+                Console.Write(mensaje);
+                string entrada = Console.ReadLine()?.Trim() ?? "";
+                if (!string.IsNullOrEmpty(entrada))
+                {
+                    return entrada;
+                }
+                Console.WriteLine("[Error] Este campo no puede quedar vacío.");
+            }
+        }
+
+        // validacion de enteros
+        static int LeerEntero(string mensaje, int min = int.MinValue)
+        {
+            int resultado;
+            while (true)
+            {
+                Console.Write(mensaje);
+                if (int.TryParse(Console.ReadLine(), out resultado) && resultado >= min)
+                {
+                    return resultado;
+                }
+                Console.WriteLine($"[Error] Por favor, ingrese un número entero válido (Mínimo: {min}).");
+            }
+        }
+
+        // validacion decimales
+        static decimal LeerDecimal(string mensaje, decimal min = 0)
+        {
+            decimal resultado;
+            while (true)
+            {
+                Console.Write(mensaje);
+                if (decimal.TryParse(Console.ReadLine(), out resultado) && resultado >= min)
+                {
+                    return resultado;
+                }
+                Console.WriteLine($"[Error] Por favor, ingrese un monto decimal válido (Mínimo: {min}).");
+            }
+        }
+
+        #endregion
+
+        #region MENUS DEL SISTEMA
+
+        static void CambiarDeSucursal()
+        {
+            bool sucursalSeleccionada = false;
+
+            while (!sucursalSeleccionada)
+            {
+                Console.Clear();
+                Console.WriteLine("=== SELECCIONE UNA SUCURSAL DE OPERACIÓN ===");
+                try
+                {
+                    List<Sucursal> lista = db.ObtenerSucursales();
+                    foreach (var suc in lista)
+                    {
+                        Console.WriteLine($"{suc.Id} - {suc.Nombre}");
+                    }
+
+                    int idSel = LeerEntero("\nIngrese el ID numérico de la sucursal: ");
                     string nombre = db.ObtenerNombreSucursal(idSel);
+
                     if (nombre != null)
                     {
                         sucursalActivaId = idSel;
                         sucursalActivaNombre = nombre;
+                        sucursalSeleccionada = true; 
                     }
                     else
                     {
-                        Console.WriteLine("\nID de sucursal no válido. Presione una tecla para reintentar...");
+                        Console.WriteLine("\n[Error] ID de sucursal inexistente. Presione una tecla para reintentar...");
                         Console.ReadKey();
-                        CambiarDeSucursal();
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine("\nEntrada incorrecta. Presione una tecla para reintentar...");
+                    Console.WriteLine("\n[Error] Falló la conexión: " + ex.Message);
+                    Console.WriteLine("Presione una tecla para reconfigurar sus credenciales de acceso...");
                     Console.ReadKey();
-                    CambiarDeSucursal();
+                    ConfigurarConexion(); 
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("\nError al cargar sucursales: " + ex.Message);
-                Console.WriteLine("¿Configuraste tu contraseña de MySQL en Program.cs?");
-                Console.ReadKey();
-                Environment.Exit(0);
             }
         }
 
@@ -117,46 +216,36 @@ namespace SistemaGestionVentas
         {
             Console.Clear();
             Console.WriteLine("=== REGISTRAR NUEVO PRODUCTO ===");
-            Console.Write("Código único: ");
-            string codigo = Console.ReadLine();
-            Console.Write("Nombre descriptivo: ");
-            string nombre = Console.ReadLine();
-            Console.Write("Precio Base: ");
-            decimal precio = decimal.Parse(Console.ReadLine());
-            Console.Write("Stock Inicial: ");
-            int stock = int.Parse(Console.ReadLine());
+            
+            string codigo = LeerTexto("Código único: ");
+            string nombre = LeerTexto("Nombre descriptivo: ");
+            decimal precio = LeerDecimal("Precio Base: ", min: 0.01m);
+            int stock = LeerEntero("Stock Inicial: ", min: 0);
 
             Console.WriteLine("\nTipo de electrodoméstico:");
             Console.WriteLine("1. Televisor");
             Console.WriteLine("2. Heladera");
             Console.WriteLine("3. Lavarropas");
-            Console.Write("Seleccione opción: ");
-            string tipo = Console.ReadLine();
+            string tipo = LeerTexto("Seleccione opción: ");
 
             Producto nuevoProd = null;
 
             if (tipo == "1")
             {
-                Console.Write("Pulgadas de pantalla: ");
-                int pulgadas = int.Parse(Console.ReadLine());
-                Console.Write("Tipo de pantalla (LED, Smart, etc.): ");
-                string tipoPant = Console.ReadLine();
+                int pulgadas = LeerEntero("Pulgadas de pantalla: ", min: 1);
+                string tipoPant = LeerTexto("Tipo de pantalla (LED, Smart, etc.): ");
                 nuevoProd = new Televisor(codigo, nombre, precio, stock, sucursalActivaId, pulgadas, tipoPant);
             }
             else if (tipo == "2")
             {
-                Console.Write("Capacidad en Litros: ");
-                int cap = int.Parse(Console.ReadLine());
-                Console.Write("Tipo (no frost / freezer): ");
-                string tipoH = Console.ReadLine();
+                int cap = LeerEntero("Capacidad en Litros: ", min: 1);
+                string tipoH = LeerTexto("Tipo (no frost / freezer): ");
                 nuevoProd = new Heladera(codigo, nombre, precio, stock, sucursalActivaId, cap, tipoH);
             }
             else if (tipo == "3")
             {
-                Console.Write("Carga máxima (kg): ");
-                int carga = int.Parse(Console.ReadLine());
-                Console.Write("Tipo (automatico / semi): ");
-                string tipoL = Console.ReadLine();
+                int carga = LeerEntero("Carga máxima (kg): ", min: 1);
+                string tipoL = LeerTexto("Tipo (automatico / semi): ");
                 nuevoProd = new Lavarropas(codigo, nombre, precio, stock, sucursalActivaId, carga, tipoL);
             }
 
@@ -185,19 +274,27 @@ namespace SistemaGestionVentas
         {
             Console.Clear();
             Console.WriteLine($"=== INVENTARIO DE {sucursalActivaNombre.ToUpper()} ===");
-            List<Producto> productos = db.ObtenerProductosPorSucursal(sucursalActivaId);
+            List<Producto> productos = new List<Producto>();
 
-            if (productos.Count == 0)
+            try
             {
-                Console.WriteLine("No hay productos cargados en esta sucursal.");
-            }
-            else
-            {
-                foreach (var p in productos)
+                productos = db.ObtenerProductosPorSucursal(sucursalActivaId);
+                if (productos.Count == 0)
                 {
-                    // Note que usamos CalcularPrecioFinal() para ver el precio dinámico calculado por Polimorfismo
-                    Console.WriteLine($"ID: {p.Id} | Código: {p.Codigo} | {p.Nombre} | Base: ${p.Precio} | Final: ${p.CalcularPrecioFinal()} | Stock: {p.Stock}");
+                    Console.WriteLine("No hay productos cargados en esta sucursal.");
                 }
+                else
+                {
+                    foreach (var p in productos)
+                    {
+                        // muestra precio base y precio final calculado por cada producto
+                        Console.WriteLine($"ID: {p.Id} | Código: {p.Codigo} | {p.Nombre} | Base: ${p.Precio} | Final: ${p.CalcularPrecioFinal()} | Stock: {p.Stock}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al recuperar el inventario: " + ex.Message);
             }
 
             if (pausarAlFinal)
@@ -218,23 +315,21 @@ namespace SistemaGestionVentas
                 return;
             }
 
-            Console.Write("\nIngrese el ID del producto que desea modificar: ");
-            if (int.TryParse(Console.ReadLine(), out int idSel))
-            {
-                Console.Write("Nuevo Precio Base: ");
-                decimal precio = decimal.Parse(Console.ReadLine());
-                Console.Write("Nuevo Stock: ");
-                int stock = int.Parse(Console.ReadLine());
+            int idSel = LeerEntero("\nIngrese el ID del producto que desea modificar: ");
+            decimal precio = LeerDecimal("Nuevo Precio Base: ", min: 0.01m);
+            int stock = LeerEntero("Nuevo Stock: ", min: 0);
 
+            try
+            {
                 bool exito = db.ModificarProducto(idSel, sucursalActivaId, precio, stock);
                 if (exito)
                     Console.WriteLine("\n¡Producto actualizado con éxito!");
                 else
                     Console.WriteLine("\nNo se encontró el producto o no pertenece a esta sucursal.");
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("\nID inválido.");
+                Console.WriteLine("Error al modificar en la BD: " + ex.Message);
             }
 
             Console.WriteLine("\nPresione cualquier tecla para continuar...");
@@ -250,22 +345,27 @@ namespace SistemaGestionVentas
                 return;
             }
 
-            Console.Write("\nIngrese el ID del producto a eliminar: ");
-            if (int.TryParse(Console.ReadLine(), out int idSel))
+            int idSel = LeerEntero("\nIngrese el ID del producto a eliminar: ");
+            string confirmacion = LeerTexto("¿Está seguro de que desea eliminar permanentemente este producto? (S/N): ");
+            
+            if (confirmacion.ToUpper() == "S")
             {
-                Console.Write("¿Está seguro de que desea eliminar permanentemente este producto? (S/N): ");
-                if (Console.ReadLine().ToUpper() == "S")
+                try
                 {
                     bool exito = db.EliminarProducto(idSel, sucursalActivaId);
                     if (exito)
                         Console.WriteLine("\n¡Producto eliminado exitosamente!");
                     else
-                        Console.WriteLine("\nNo se pudo eliminar el producto.");
+                        Console.WriteLine("\nNo se pudo eliminar el producto (verifique el ID).");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error al eliminar de la BD: " + ex.Message);
                 }
             }
             else
             {
-                Console.WriteLine("\nID inválido.");
+                Console.WriteLine("\nOperación cancelada.");
             }
 
             Console.WriteLine("\nPresione cualquier tecla para continuar...");
@@ -281,8 +381,7 @@ namespace SistemaGestionVentas
                 return;
             }
 
-            Console.Write("\nIngrese el ID del producto que va a vender: ");
-            if (!int.TryParse(Console.ReadLine(), out int idSel)) return;
+            int idSel = LeerEntero("\nIngrese el ID del producto que va a vender: ");
 
             Producto prodElegido = productos.Find(p => p.Id == idSel);
             if (prodElegido == null)
@@ -292,29 +391,23 @@ namespace SistemaGestionVentas
                 return;
             }
 
-            Console.Write($"Ingrese cantidad a vender (Stock actual: {prodElegido.Stock}): ");
-            if (int.TryParse(Console.ReadLine(), out int cant) && cant > 0)
-            {
-                if (cant > prodElegido.Stock)
-                {
-                    Console.WriteLine("\n¡Error! No hay suficiente stock para cubrir la demanda.");
-                    Console.ReadKey();
-                    return;
-                }
+            int cant = LeerEntero($"Ingrese cantidad a vender (Stock actual: {prodElegido.Stock}): ", min: 1);
 
-                // Cálculo total multiplicando el precio calculado polimórficamente
-                decimal totalVenta = prodElegido.CalcularPrecioFinal() * cant;
-
-                // Llama al gestor de BD que ejecuta la transacción
-                db.RegistrarVentaConTransaccion(sucursalActivaId, prodElegido, cant, totalVenta);
-            }
-            else
+            if (cant > prodElegido.Stock)
             {
-                Console.WriteLine("\nCantidad inválida.");
+                Console.WriteLine("\n¡Error! No hay suficiente stock para cubrir la demanda.");
+                Console.ReadKey();
+                return;
             }
+
+            decimal totalVenta = prodElegido.CalcularPrecioFinal() * cant;
+
+            db.RegistrarVentaConTransaccion(sucursalActivaId, prodElegido, cant, totalVenta);
 
             Console.WriteLine("\nPresione cualquier tecla para continuar...");
             Console.ReadKey();
         }
+
+        #endregion
     }
 }
