@@ -37,7 +37,7 @@ namespace SistemaGestionVentas
             return sucursales;
         }
 
-        // Obtiene el nombre de una sucursal específica
+        // obtiene el nombre de la sucursal por su id
         public string ObtenerNombreSucursal(int id)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -53,7 +53,7 @@ namespace SistemaGestionVentas
             }
         }
 
-        // Guarda un producto en la BD (Alta de productos)
+        // guarda un producto en la bdd
         public void GuardarProducto(Producto prod)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -71,7 +71,7 @@ namespace SistemaGestionVentas
                     cmd.Parameters.AddWithValue("@stock", prod.Stock);
                     cmd.Parameters.AddWithValue("@id_sucursal", prod.IdSucursal);
 
-                    // Evaluamos dinámicamente el tipo de objeto para guardar sus atributos correspondientes
+                    // determian el tipo de producto y asigna los parámetros específicos, dejando null los que no se usen
                     if (prod is Televisor tv)
                     {
                         cmd.Parameters.AddWithValue("@tipo", "Televisor");
@@ -108,7 +108,7 @@ namespace SistemaGestionVentas
             }
         }
 
-        // Carga los productos desde la BD filtrados por sucursal
+        // carga los productos de una sucursal específica
         public List<Producto> ObtenerProductosPorSucursal(int idSucursal)
         {
             List<Producto> lista = new List<Producto>();
@@ -164,7 +164,7 @@ namespace SistemaGestionVentas
             return lista;
         }
 
-        // Modifica el precio base y stock de un producto (Modificación de productos)
+        // modifica el precio y stock de los productos
         public bool ModificarProducto(int id, int idSucursal, decimal nuevoPrecio, int nuevoStock)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -183,7 +183,7 @@ namespace SistemaGestionVentas
             }
         }
 
-        // Elimina físicamente un producto (Eliminación de productos)
+        // elimina un producto de la bdd
         public bool EliminarProducto(int id, int idSucursal)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -200,18 +200,18 @@ namespace SistemaGestionVentas
             }
         }
 
-        // Realiza el registro de venta completo protegiéndolo bajo una TRANSACCIÓN (Requisito Obligatorio)
+        // realiza el registro de una venta 
         public void RegistrarVentaConTransaccion(int idSucursal, Producto prod, int cantidad, decimal totalVenta)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
-                // Iniciamos la transacción formalmente en el servidor
+                // inicia la transaccion
                 MySqlTransaction transaccion = conn.BeginTransaction();
 
                 try
                 {
-                    // 1. Crear cabecera de la venta
+                    // 1.crea la venta y obtiene su id generado automáticamente
                     string queryVenta = "INSERT INTO venta (id_sucursal, total) VALUES (@id_sucursal, @total); SELECT LAST_INSERT_ID();";
                     int idVentaGenerado = 0;
 
@@ -222,7 +222,7 @@ namespace SistemaGestionVentas
                         idVentaGenerado = Convert.ToInt32(cmdVenta.ExecuteScalar());
                     }
 
-                    // 2. Crear detalle de la venta (usando el precio final con impuesto polimórfico)
+                    // 2. crear detalle de la venta con el producto vendido
                     string queryDetalle = "INSERT INTO detalle_venta (id_venta, id_producto, cantidad, precio_unitario) VALUES (@id_venta, @id_producto, @cantidad, @precio_unitario)";
                     using (MySqlCommand cmdDetalle = new MySqlCommand(queryDetalle, conn, transaccion))
                     {
@@ -234,7 +234,7 @@ namespace SistemaGestionVentas
                         cmdDetalle.ExecuteNonQuery();
                     }
 
-                    // 3. Descontar stock automáticamente de la base de datos
+                    // 3. descontar el stock del producto vendido
                     string queryActualizarStock = "UPDATE producto SET stock = stock - @cantidad WHERE id = @id";
                     using (MySqlCommand cmdStock = new MySqlCommand(queryActualizarStock, conn, transaccion))
                     {
@@ -244,7 +244,7 @@ namespace SistemaGestionVentas
                         cmdStock.ExecuteNonQuery();
                     }
 
-                    // Si no hubo excepciones, confirmamos y guardamos todos los cambios permanentemente
+                    // si no hubo excepciones se confirma la transaccion y guarda todo en la base de datos
                     transaccion.Commit();
                     Console.WriteLine("\n=================================");
                     Console.WriteLine(" ¡VENTA REALIZADA CON ÉXITO!");
@@ -254,7 +254,7 @@ namespace SistemaGestionVentas
                 }
                 catch (Exception ex)
                 {
-                    // Si algo falló en los pasos anteriores, cancelamos TODO para evitar corrupción de datos
+                    // si algo falla en cualquiera de los pasos, se revierte todo lo hecho en la base de datos
                     transaccion.Rollback();
                     Console.WriteLine("\n[Error de Consistencia] Venta cancelada.");
                     Console.WriteLine("Detalle técnico: " + ex.Message);

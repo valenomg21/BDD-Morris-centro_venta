@@ -1,6 +1,6 @@
 namespace SistemaGestionVentas
 {
-    // Herencia: Televisor "es un" Producto
+    // televisor hereda de producto
     public class Televisor : Producto
     {
         public int Pulgadas { get; set; }
@@ -13,7 +13,7 @@ namespace SistemaGestionVentas
             TipoPantalla = tipoPantalla;
         }
 
-        // Polimorfismo: Las TVs tienen un recargo del 10% por costos aduaneros de tecnología
+        // modifica el metodo de la clase padre
         public override decimal CalcularPrecioFinal()
         {
             return Precio * 1.10m;

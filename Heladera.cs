@@ -1,6 +1,6 @@
 namespace SistemaGestionVentas
 {
-    // Herencia: Heladera "es un" Producto
+    // heladera hereda de producto
     public class Heladera : Producto
     {
         public int Capacidad { get; set; }
@@ -13,7 +13,7 @@ namespace SistemaGestionVentas
             Tipo = tipo;
         }
 
-        // Polimorfismo: Las heladeras tienen un 5% de recargo por flete especial de línea blanca
+        // modifica el método de la clase padre
         public override decimal CalcularPrecioFinal()
         {
             return Precio * 1.05m;

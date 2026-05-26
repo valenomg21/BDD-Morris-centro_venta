@@ -1,6 +1,6 @@
 namespace SistemaGestionVentas
 {
-    // Clase abstracta: No se puede instanciar directamente, solo sirve de base (Abstracción)
+    // clase abstracta que representa un producto en el sistema de gestión de ventas
     public abstract class Producto
     {
         public int Id { get; set; }
@@ -10,7 +10,7 @@ namespace SistemaGestionVentas
         public int Stock { get; set; }
         public int IdSucursal { get; set; }
 
-        // Constructor base para heredar a los hijos
+        // constructor para inicializar las propiedades del producto
         protected Producto(string codigo, string nombre, decimal precio, int stock, int idSucursal)
         {
             Codigo = codigo;
@@ -20,7 +20,7 @@ namespace SistemaGestionVentas
             IdSucursal = idSucursal;
         }
 
-        // Método abstracto: Obliga a cada hijo a calcular su precio final a su manera (Polimorfismo)
+        // obliga a las clases hijas a usar el mismo metodo
         public abstract decimal CalcularPrecioFinal();
     }
 }
