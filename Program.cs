@@ -5,7 +5,8 @@ namespace SistemaGestionVentas
 {
     class Program
     {
-        private static string connectionString = "";
+        // Guardamos la direccion de conexion fija en la variable
+        private static string connectionString = "Server=localhost;Database=electrodomesticosdb;Uid=root;Pwd=pokemon123;AllowPublicKeyRetrieval=True;SslMode=Disabled;";
         private static DatabaseManager db;
         private static int sucursalActivaId = 0;
         private static string sucursalActivaNombre = "";
@@ -14,7 +15,7 @@ namespace SistemaGestionVentas
         {
             Console.Title = "UTN - Sistema de Control de Stock y Ventas";
 
-            // Configuramos la conexión con tus credenciales locales al inicio
+            // Inicializamos la conexion con los datos fijos
             ConfigurarConexion();
 
             // Selección obligatoria de sucursal
@@ -70,53 +71,12 @@ namespace SistemaGestionVentas
             }
         }
 
-        #region CONFIGURACIÓN DE CONEXIÓN Y LOGIN SEGURO
+        #region CONFIGURACIÓN DE CONEXIÓN
 
         static void ConfigurarConexion()
         {
-            Console.Clear();
-            Console.WriteLine("==================================================");
-            Console.WriteLine("        CONFIGURACIÓN DE CONEXIÓN A MYSQL         ");
-            Console.WriteLine("==================================================");
-            Console.Write("Ingrese su usuario de MySQL [Por defecto: root]: ");
-            string usuario = Console.ReadLine();
-            if (string.IsNullOrEmpty(usuario)) usuario = "root";
-
-            string password = LeerContraseña("Ingrese su contraseña de MySQL: ");
-            
-            // 198.162.1.2, , alumnos, 123456789
-            connectionString = $"Server=localhost;Database=gestion_ventas;Uid={usuario};Pwd={password};AllowPublicKeyRetrieval=True;SslMode=Disabled;";
+            // Instanciamos el administrador de base de datos usando la direccion fija de arriba
             db = new DatabaseManager(connectionString);
-        }
-
-        // oculta la contraseña 
-        static string LeerContraseña(string mensaje)
-        {
-            Console.Write(mensaje);
-            string password = "";
-            while (true)
-            {
-                ConsoleKeyInfo key = Console.ReadKey(true);
-                if (key.Key == ConsoleKey.Enter)
-                {
-                    Console.WriteLine();
-                    break;
-                }
-                else if (key.Key == ConsoleKey.Backspace)
-                {
-                    if (password.Length > 0)
-                    {
-                        password = password.Substring(0, password.Length - 1);
-                        Console.Write("\b \b");
-                    }
-                }
-                else if (key.KeyChar != '\u0000') 
-                {
-                    password += key.KeyChar;
-                    Console.Write("*");
-                }
-            }
-            return password;
         }
 
         #endregion
@@ -203,9 +163,8 @@ namespace SistemaGestionVentas
                 catch (Exception ex)
                 {
                     Console.WriteLine("\n[Error] Falló la conexión: " + ex.Message);
-                    Console.WriteLine("Presione una tecla para reconfigurar sus credenciales de acceso...");
+                    Console.WriteLine("Presione una tecla para reintentar...");
                     Console.ReadKey();
-                    ConfigurarConexion(); 
                 }
             }
         }
