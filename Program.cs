@@ -14,10 +14,10 @@ namespace SistemaGestionVentas
         {
             Console.Title = "UTN - Sistema de Control de Stock y Ventas";
 
-            // se piden los datos de la conexion antes de empezar
+            // Configuramos la conexión con tus credenciales locales al inicio
             ConfigurarConexion();
 
-            // obliga a elegir una sucursal
+            // Selección obligatoria de sucursal
             CambiarDeSucursal();
 
             bool ejecutar = true;
@@ -83,12 +83,13 @@ namespace SistemaGestionVentas
             if (string.IsNullOrEmpty(usuario)) usuario = "root";
 
             string password = LeerContraseña("Ingrese su contraseña de MySQL: ");
-            //cuando tenga que conectar la bbd del profe solo cambio el localhost por su ip
-            connectionString = $"Server=localhost;Database=gestion_ventas;Uid={usuario};Pwd={password};";
+            
+            // 198.162.1.2, , alumnos, 123456789
+            connectionString = $"Server=localhost;Database=gestion_ventas;Uid={usuario};Pwd={password};AllowPublicKeyRetrieval=True;SslMode=Disabled;";
             db = new DatabaseManager(connectionString);
         }
 
-        // metodo para leer contraseñas sin mostrar el texto en consola, y con soporte de backspace
+        // oculta la contraseña 
         static string LeerContraseña(string mensaje)
         {
             Console.Write(mensaje);
@@ -120,9 +121,8 @@ namespace SistemaGestionVentas
 
         #endregion
 
-        #region METODOS DE VALIDACION DE ENTRADAS
+        #region METODOS DE VALIDACION DE ENTRADAS (TryParse básicos)
 
-        // validacion de txto
         static string LeerTexto(string mensaje)
         {
             while (true)
@@ -137,7 +137,6 @@ namespace SistemaGestionVentas
             }
         }
 
-        // validacion de enteros
         static int LeerEntero(string mensaje, int min = int.MinValue)
         {
             int resultado;
@@ -152,7 +151,6 @@ namespace SistemaGestionVentas
             }
         }
 
-        // validacion decimales
         static decimal LeerDecimal(string mensaje, decimal min = 0)
         {
             decimal resultado;
@@ -187,7 +185,7 @@ namespace SistemaGestionVentas
                         Console.WriteLine($"{suc.Id} - {suc.Nombre}");
                     }
 
-                    int idSel = LeerEntero("\nIngrese el ID numérico de la sucursal: ");
+                    int idSel = LeerEntero("\nIngrese el ID de la sucursal: ");
                     string nombre = db.ObtenerNombreSucursal(idSel);
 
                     if (nombre != null)
@@ -287,7 +285,6 @@ namespace SistemaGestionVentas
                 {
                     foreach (var p in productos)
                     {
-                        // muestra precio base y precio final calculado por cada producto
                         Console.WriteLine($"ID: {p.Id} | Código: {p.Codigo} | {p.Nombre} | Base: ${p.Precio} | Final: ${p.CalcularPrecioFinal()} | Stock: {p.Stock}");
                     }
                 }
