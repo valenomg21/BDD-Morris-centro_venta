@@ -13,7 +13,7 @@ namespace SistemaGestionVentas
             connectionString = connStr;
         }
 
-        // 1. LISTAR SUCURSALES (IdSucursal, Nombre)
+        // lista las sucursales
         public List<Sucursal> ObtenerSucursales()
         {
             List<Sucursal> sucursales = new List<Sucursal>();
@@ -36,7 +36,7 @@ namespace SistemaGestionVentas
             return sucursales;
         }
 
-        // 2. OBTENER NOMBRE SUCURSAL (IdSucursal, Nombre)
+        // obtiene nmbre de la sucursal
         public string ObtenerNombreSucursal(int id)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -52,14 +52,14 @@ namespace SistemaGestionVentas
             }
         }
 
-        // 3. GUARDAR PRODUCTO (Usa diseño normalizado con insert en dos pasos)
+        // guarda el producto en la bdd
         public void GuardarProducto(Producto prod)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
                 
-                // Paso 1: Insertamos en la tabla base 'Producto' y recuperamos el IdProducto generado
+                // inserta producto en la tabla general y obtiene el id generado
                 string queryProducto = @"INSERT INTO Producto 
                     (Codigo, Nombre, Precio, Stock, IdSucursal, TipoProducto) 
                     VALUES (@codigo, @nombre, @precio, @stock, @id_sucursal, @tipo);
@@ -82,7 +82,7 @@ namespace SistemaGestionVentas
                     idProductoGenerado = Convert.ToInt32(cmd.ExecuteScalar());
                 }
 
-                // Paso 2: Insertamos los datos específicos según el tipo en su tabla correspondiente
+                // inserta en la tabla específica según el tipo de producto
                 if (prod is Televisor tv)
                 {
                     string queryTv = "INSERT INTO Televisor (IdProducto, Pulgadas, TipoPantalla) VALUES (@id, @pulgadas, @pantalla)";
@@ -119,7 +119,7 @@ namespace SistemaGestionVentas
             }
         }
 
-        // 4. LISTAR PRODUCTOS (LEFT JOIN para unificar la información de las tablas hijas)
+        // muestra los productos de la sucursal
         public List<Producto> ObtenerProductosPorSucursal(int idSucursal)
         {
             List<Producto> lista = new List<Producto>();
@@ -186,7 +186,7 @@ namespace SistemaGestionVentas
             return lista;
         }
 
-        // 5. MODIFICAR PRODUCTO (Precio, Stock, IdProducto, IdSucursal)
+        // modifica el producto en la bdd
         public bool ModificarProducto(int id, int idSucursal, decimal nuevoPrecio, int nuevoStock)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -205,7 +205,7 @@ namespace SistemaGestionVentas
             }
         }
 
-        // 6. ELIMINAR PRODUCTO (IdProducto, IdSucursal)
+        // elimina el producto de la bdd
         public bool EliminarProducto(int id, int idSucursal)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -222,7 +222,7 @@ namespace SistemaGestionVentas
             }
         }
 
-        // 7. TRANSACCIÓN DE VENTA (Venta, DetalleVenta, IdVenta, IdProducto, Cantidad, PrecioUnitario, IdSucursal)
+        // registra la venta con transaccion
         public void RegistrarVentaConTransaccion(int idSucursal, Producto prod, int cantidad, decimal totalVenta)
         {
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -232,7 +232,7 @@ namespace SistemaGestionVentas
 
                 try
                 {
-                    // 1. Insertamos cabecera de la venta (La tabla 'Venta' no tiene columna 'total' en tu script, así que registramos solo IdSucursal)
+                    // inserta la venta en la tabla 'Venta' y obtiene el id generado
                     string queryVenta = "INSERT INTO Venta (IdSucursal) VALUES (@id_sucursal); SELECT LAST_INSERT_ID();";
                     int idVentaGenerado = 0;
 
@@ -242,7 +242,7 @@ namespace SistemaGestionVentas
                         idVentaGenerado = Convert.ToInt32(cmdVenta.ExecuteScalar());
                     }
 
-                    // 2. Insertamos el detalle de la venta en 'DetalleVenta'
+                    // inserta el detalle de la venta en la tabla 'DetalleVenta'
                     string queryDetail = "INSERT INTO DetalleVenta (IdVenta, IdProducto, Cantidad, PrecioUnitario) VALUES (@id_venta, @id_producto, @cantidad, @precio_unitario)";
                     using (MySqlCommand cmdDetalle = new MySqlCommand(queryDetail, conn, transaccion))
                     {
@@ -254,7 +254,7 @@ namespace SistemaGestionVentas
                         cmdDetalle.ExecuteNonQuery();
                     }
 
-                    // 3. Restamos stock de la tabla 'Producto'
+                    // resta el stock del producto vendido
                     string queryActualizarStock = "UPDATE Producto SET Stock = Stock - @cantidad WHERE IdProducto = @id";
                     using (MySqlCommand cmdStock = new MySqlCommand(queryActualizarStock, conn, transaccion))
                     {

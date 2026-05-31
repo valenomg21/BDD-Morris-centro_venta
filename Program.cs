@@ -5,7 +5,7 @@ namespace SistemaGestionVentas
 {
     class Program
     {
-        // Guardamos la direccion de conexion fija en la variable
+        //guarda la direccion de la bdd
         private static string connectionString = "Server=localhost;Database=electrodomesticosdb;Uid=root;Pwd=pokemon123;AllowPublicKeyRetrieval=True;SslMode=Disabled;";
         private static DatabaseManager db;
         private static int sucursalActivaId = 0;
@@ -15,10 +15,9 @@ namespace SistemaGestionVentas
         {
             Console.Title = "UTN - Sistema de Control de Stock y Ventas";
 
-            // Inicializamos la conexion con los datos fijos
+            //inicializa la conexion
             ConfigurarConexion();
 
-            // Selección obligatoria de sucursal
             CambiarDeSucursal();
 
             bool ejecutar = true;
@@ -75,7 +74,7 @@ namespace SistemaGestionVentas
 
         static void ConfigurarConexion()
         {
-            // Instanciamos el administrador de base de datos usando la direccion fija de arriba
+            // instancia el admin de la bdd
             db = new DatabaseManager(connectionString);
         }
 
