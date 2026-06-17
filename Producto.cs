@@ -1,6 +1,6 @@
 namespace SistemaGestionVentas
 {
-    // clase abstracta que representa un producto en el sistema de gestión de ventas
+    // clase que representa un producro
     public abstract class Producto
     {
         public int Id { get; set; }
@@ -10,7 +10,7 @@ namespace SistemaGestionVentas
         public int Stock { get; set; }
         public int IdSucursal { get; set; }
 
-        // constructor para inicializar las propiedades del producto
+        // constructor de clase producto
         protected Producto(string codigo, string nombre, decimal precio, int stock, int idSucursal)
         {
             Codigo = codigo;

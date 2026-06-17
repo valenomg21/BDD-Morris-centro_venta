@@ -80,7 +80,7 @@ namespace SistemaGestionVentas
 
         #endregion
 
-        #region METODOS DE VALIDACION DE ENTRADAS (TryParse básicos)
+        #region METODOS DE VALIDACION DE ENTRADAS
 
         static string LeerTexto(string mensaje)
         {
